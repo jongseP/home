@@ -25,7 +25,7 @@
   <div class="date" id="date"></div>
   <h1>무엇을 볼까요?</h1>
   <a class="card" href="https://ncmh-menu.pages.dev/"><b>직원 식단</b><p id="menu">불러오는 중…</p></a>
-  <a class="card" href="/ipo-calendar/"><b>공모주 달력</b><p id="ipo">불러오는 중…</p></a>
+  <a class="card" href="https://jongsep.github.io/ipo-calendar/"><b>공모주 달력</b><p id="ipo">불러오는 중…</p></a>
 </main>
 <script>
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -36,12 +36,12 @@ document.getElementById("date").textContent = md(today) + " " + "일월화수목
 const show = (id, html) => document.getElementById(id).innerHTML = html;
 const get = u => fetch(u, {cache:"no-cache"}).then(r => { if (!r.ok) throw r.status; return r.json(); });
 
-get("/ncmh-menu/data/menu.json").then(d => {
+get("https://jongsep.github.io/ncmh-menu/data/menu.json").then(d => {
   const day = d.weeks.flatMap(w => w.days).find(x => x.date === today);
   show("menu", day && day.main.length ? "오늘 " + day.main.map(esc).join(", ") : "오늘 식단은 아직 없어요");
 }).catch(() => show("menu", "식단을 불러오지 못했어요"));
 
-get("/ipo-calendar/data/ipos.json").then(d => {
+get("https://jongsep.github.io/ipo-calendar/data/ipos.json").then(d => {
   // 오늘부터 7일 안에 청약이 걸친 종목
   const end = plus(6);
   const list = Object.values(d.ipos).filter(i => i.status === "active" && i.sub_start && i.sub_start <= end && i.sub_end >= today)
