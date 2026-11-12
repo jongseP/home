@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>홈</title>
+<meta name="theme-color" content="#ffffff">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root { --accent:#3182f6; --text:#191f28; --sub:#8b95a1; --chip:#f4f6f8; --line:#eef0f3; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--text); font-family:Pretendard,-apple-system,"Apple SD Gothic Neo",sans-serif; letter-spacing:-.3px; }
+  main { max-width:480px; margin:0 auto; padding:28px 24px 48px; }
+  .date { font-size:15px; color:var(--sub); font-weight:500; }
+  h1 { font-size:30px; font-weight:700; margin:6px 0 28px; }
+  a.card { display:block; border:1px solid var(--line); border-radius:18px; padding:18px 20px; margin-bottom:12px; color:inherit; text-decoration:none; }
+  a.card:active { background:var(--chip); }
+  .card b { display:flex; justify-content:space-between; font-size:19px; }
+  .card b::after { content:"›"; color:var(--sub); font-weight:400; }
+  .card p { margin:8px 0 0; font-size:15px; color:#4e5968; line-height:1.5; word-break:keep-all; }
+</style>
+</head>
+<body>
+<main>
+  <div class="date" id="date"></div>
+  <h1>무엇을 볼까요?</h1>
+  <a class="card" href="/ncmh-menu/"><b>직원 식단</b><p id="menu">불러오는 중…</p></a>
+  <a class="card" href="/ipo-calendar/"><b>공모주 달력</b><p id="ipo">불러오는 중…</p></a>
+</main>
+<script>
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Seoul"}).format(new Date());
+const plus = n => new Date(Date.parse(today + "T00:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+const md = iso => `${+iso.slice(5,7)}월 ${+iso.slice(8,10)}일`;
+document.getElementById("date").textContent = md(today) + " " + "일월화수목금토"[new Date(today + "T00:00:00Z").getUTCDay()] + "요일";
+const show = (id, html) => document.getElementById(id).innerHTML = html;
+const get = u => fetch(u, {cache:"no-cache"}).then(r => { if (!r.ok) throw r.status; return r.json(); });
+
+get("/ncmh-menu/data/menu.json").then(d => {
+  const day = d.weeks.flatMap(w => w.days).find(x => x.date === today);
+  show("menu", day && day.main.length ? "오늘 " + day.main.map(esc).join(", ") : "오늘 식단은 아직 없어요");
+}).catch(() => show("menu", "식단을 불러오지 못했어요"));
+
+get("/ipo-calendar/data/ipos.json").then(d => {
+  // 오늘부터 7일 안에 청약이 걸친 종목
+  const end = plus(6);
+  const list = Object.values(d.ipos).filter(i => i.status === "active" && i.sub_start && i.sub_start <= end && i.sub_end >= today)
+    .sort((a, b) => a.sub_start.localeCompare(b.sub_start));
+  show("ipo", list.length
+    ? list.map(i => `${esc(i.name)} <span style="color:var(--sub)">${i.sub_start <= today ? "청약 중" : md(i.sub_start)}</span>`).join("<br>")
+    : "7일 안에 청약하는 종목이 없어요");
+}).catch(() => show("ipo", "일정을 불러오지 못했어요"));
+</script>
+</body>
+</html>
